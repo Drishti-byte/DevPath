@@ -11,7 +11,7 @@
 // ============================================================
 // Detect which page we are on
 // ============================================================
-var isIndexPage  = !!document.getElementById("recommend-form");
+var isIndexPage = !!document.getElementById("recommend-form");
 var isDetailPage = typeof PROJECT_ID !== "undefined";
 
 
@@ -20,7 +20,7 @@ var isDetailPage = typeof PROJECT_ID !== "undefined";
 // ============================================================
 (function initMobileNav() {
   var toggle = document.getElementById("nav-mobile-toggle");
-  var menu   = document.getElementById("nav-mobile-menu");
+  var menu = document.getElementById("nav-mobile-menu");
 
   if (!toggle || !menu) return;
 
@@ -46,19 +46,19 @@ var isDetailPage = typeof PROJECT_ID !== "undefined";
 if (isIndexPage) {
 
   // DOM references
-  var form              = document.getElementById("recommend-form");
-  var submitBtn         = document.getElementById("submit-btn");
-  var btnLabel          = document.getElementById("btn-label");
-  var btnLoading        = document.getElementById("btn-loading");
-  var resultsSection    = document.getElementById("results-section");
-  var resultsGrid       = document.getElementById("results-grid");
-  var resultsLoadingEl  = document.getElementById("results-loading");
-  var resultsEmptyEl    = document.getElementById("results-empty");
-  var emptyMessageEl    = document.getElementById("empty-message");
-  var skillsHidden      = document.getElementById("skills");
-  var skillsTextInput   = document.getElementById("skills-input");
-  var chipsSelectedEl   = document.getElementById("skill-chips-selected");
-  var quickPickChips    = document.querySelectorAll(".skill-chip");
+  var form = document.getElementById("recommend-form");
+  var submitBtn = document.getElementById("submit-btn");
+  var btnLabel = document.getElementById("btn-label");
+  var btnLoading = document.getElementById("btn-loading");
+  var resultsSection = document.getElementById("results-section");
+  var resultsGrid = document.getElementById("results-grid");
+  var resultsLoadingEl = document.getElementById("results-loading");
+  var resultsEmptyEl = document.getElementById("results-empty");
+  var emptyMessageEl = document.getElementById("empty-message");
+  var skillsHidden = document.getElementById("skills");
+  var skillsTextInput = document.getElementById("skills-input");
+  var chipsSelectedEl = document.getElementById("skill-chips-selected");
+  var quickPickChips = document.querySelectorAll(".skill-chip");
 
   // Tracks currently selected skills to prevent duplicates
   var selectedSkills = [];
@@ -199,7 +199,6 @@ if (isIndexPage) {
   // ----------------------------------------------------------
   // Form submission and API call
   // ----------------------------------------------------------
-
   form.addEventListener("submit", function (evt) {
     evt.preventDefault();
     clearAllErrors();
@@ -208,53 +207,80 @@ if (isIndexPage) {
 
     setLoadingState(true);
 
-    var payload = {
-      skills:   skillsHidden.value.trim() || skillsTextInput.value.trim(),
-      level:    document.getElementById("level").value,
-      interest: document.getElementById("interest").value,
-      time:     document.getElementById("time").value
-    };
+    // Allow browser to paint spinner before request starts
+    requestAnimationFrame(function () {
 
-    fetch("/api/recommend", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify(payload)
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        setLoadingState(false);
+      var payload = {
+        skills: skillsHidden.value.trim() || skillsTextInput.value.trim(),
+        level: document.getElementById("level").value,
+        interest: document.getElementById("interest").value,
+        time: document.getElementById("time").value
+      };
 
-        if (data.error) {
-          var generalErr = document.getElementById("form-error-general");
-          if (generalErr) generalErr.textContent = data.error;
-          return;
-        }
-
-        renderResults(data.projects || [], data.message);
+      fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       })
-      .catch(function (err) {
-        setLoadingState(false);
-        var generalErr = document.getElementById("form-error-general");
-        if (generalErr) generalErr.textContent = "Something went wrong. Please try again.";
-        console.error("API request failed:", err);
-      });
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (data) {
+
+          // Small delay so loading state is actually visible
+          setTimeout(function () {
+
+            setLoadingState(false);
+
+            if (data.error) {
+              var generalErr = document.getElementById("form-error-general");
+
+              if (generalErr) {
+                generalErr.textContent = data.error;
+              }
+
+              return;
+            }
+
+            renderResults(data.projects || [], data.message);
+
+          }, 500);
+
+        })
+        .catch(function (err) {
+
+          setLoadingState(false);
+
+          var generalErr = document.getElementById("form-error-general");
+
+          if (generalErr) {
+            generalErr.textContent =
+              "Something went wrong. Please try again.";
+          }
+
+          console.error("API request failed:", err);
+
+        });
+
+    });
   });
 
   function setLoadingState(isLoading) {
     submitBtn.disabled = isLoading;
-    btnLabel.style.display   = isLoading ? "none"   : "inline";
-    btnLoading.style.display = isLoading ? "inline" : "none";
+    submitBtn.setAttribute("aria-busy", isLoading);
+    btnLabel.style.display = isLoading ? "none" : "inline";
+    btnLoading.style.display = isLoading ? "inline-flex" : "none";
 
     if (isLoading) {
       // Show the results section with only the loading indicator visible
-      resultsSection.style.display    = "block";
-      resultsLoadingEl.style.display  = "block";
-      resultsGrid.style.display       = "none";
-      resultsEmptyEl.style.display    = "none";
+      resultsSection.style.display = "block";
+      resultsLoadingEl.style.display = "block";
+      resultsGrid.style.display = "none";
+      resultsEmptyEl.style.display = "none";
       resultsSection.scrollIntoView({ behavior: "smooth" });
     } else {
-      resultsLoadingEl.style.display  = "none";
-      resultsGrid.style.display       = "grid";
+      resultsLoadingEl.style.display = "none";
+      resultsGrid.style.display = "grid";
     }
   }
 
@@ -264,20 +290,20 @@ if (isIndexPage) {
   // ----------------------------------------------------------
 
   function renderResults(projects, message) {
-    resultsSection.style.display    = "block";
-    resultsLoadingEl.style.display  = "none";
-    resultsGrid.innerHTML           = "";
+    resultsSection.style.display = "block";
+    resultsLoadingEl.style.display = "none";
+    resultsGrid.innerHTML = "";
 
     if (!projects || projects.length === 0) {
-      resultsGrid.style.display      = "none";
-      resultsEmptyEl.style.display   = "block";
+      resultsGrid.style.display = "none";
+      resultsEmptyEl.style.display = "block";
       if (message && emptyMessageEl) emptyMessageEl.textContent = message;
       resultsSection.scrollIntoView({ behavior: "smooth" });
       return;
     }
 
-    resultsEmptyEl.style.display  = "none";
-    resultsGrid.style.display     = "grid";
+    resultsEmptyEl.style.display = "none";
+    resultsGrid.style.display = "grid";
 
     projects.forEach(function (project) {
       resultsGrid.appendChild(buildProjectCard(project));
@@ -292,12 +318,12 @@ if (isIndexPage) {
 
     // Title
     var title = document.createElement("h3");
-    title.className   = "project-card-title";
+    title.className = "project-card-title";
     title.textContent = project.title;
 
     // Description (truncated for visual consistency)
     var desc = document.createElement("p");
-    desc.className   = "project-card-desc";
+    desc.className = "project-card-desc";
     desc.textContent = truncate(project.description, 120);
 
     // Tags row
@@ -321,9 +347,9 @@ if (isIndexPage) {
     footer.className = "project-card-footer";
 
     var link = document.createElement("a");
-    link.className   = "btn-details";
+    link.className = "btn-details";
     link.textContent = "View Full Project";
-    link.href        = "/project/" + project.id;
+    link.href = "/project/" + project.id;
 
     footer.appendChild(link);
 
@@ -337,7 +363,7 @@ if (isIndexPage) {
 
   function createTag(text, type) {
     var span = document.createElement("span");
-    span.className   = "project-tag project-tag--" + type;
+    span.className = "project-tag project-tag--" + type;
     span.textContent = text;
     return span;
   }
@@ -355,13 +381,13 @@ if (isIndexPage) {
 // ============================================================
 if (isDetailPage) {
 
-  var codePanel         = document.getElementById("code-panel");
-  var codePanelOverlay  = document.getElementById("code-panel-overlay");
-  var codeContentEl     = document.getElementById("code-content");
+  var codePanel = document.getElementById("code-panel");
+  var codePanelOverlay = document.getElementById("code-panel-overlay");
+  var codeContentEl = document.getElementById("code-content");
   var codePanelFilename = document.getElementById("code-panel-filename");
-  var btnViewCode       = document.getElementById("btn-view-code");
-  var btnViewCodeSm     = document.getElementById("btn-view-code-sm");
-  var btnClosePanel     = document.getElementById("code-panel-close");
+  var btnViewCode = document.getElementById("btn-view-code");
+  var btnViewCodeSm = document.getElementById("btn-view-code-sm");
+  var btnClosePanel = document.getElementById("code-panel-close");
 
   // Cache flag so code is only fetched once per page load
   var codeFetched = false;
@@ -386,14 +412,20 @@ if (isDetailPage) {
     if (codeContentEl) codeContentEl.textContent = "Loading starter code...";
 
     fetch("/project/" + PROJECT_ID + "/code")
-      .then(function (res) { return res.json(); })
+      .then(function (res) {
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            res.json().then(resolve);
+          }, 3000);
+        });
+      })
       .then(function (data) {
         if (data.error) {
           if (codeContentEl) codeContentEl.textContent = "Error: " + data.error;
           return;
         }
         if (codePanelFilename) codePanelFilename.textContent = data.filename;
-        if (codeContentEl)     codeContentEl.textContent     = data.code;
+        if (codeContentEl) codeContentEl.textContent = data.code;
         codeFetched = true;
       })
       .catch(function () {
@@ -404,7 +436,7 @@ if (isDetailPage) {
   }
 
   // Attach open/close handlers
-  if (btnViewCode)   btnViewCode.addEventListener("click", openCodePanel);
+  if (btnViewCode) btnViewCode.addEventListener("click", openCodePanel);
   if (btnViewCodeSm) btnViewCodeSm.addEventListener("click", openCodePanel);
   if (btnClosePanel) btnClosePanel.addEventListener("click", closeCodePanel);
 
