@@ -11,7 +11,9 @@
 // ============================================================
 // Detect which page we are on
 // ============================================================
+// !! trick turns the DOM result into a simple true/false
 var isIndexPage  = !!document.getElementById("recommend-form");
+// PROJECT_ID is set by the server only on detail pages, so if it's missing we're elsewhere
 var isDetailPage = typeof PROJECT_ID !== "undefined";
 
 
@@ -22,11 +24,14 @@ var isDetailPage = typeof PROJECT_ID !== "undefined";
   var toggle = document.getElementById("nav-mobile-toggle");
   var menu   = document.getElementById("nav-mobile-menu");
 
+  // Nothing to do if the nav isn't on this page, just bail out
   if (!toggle || !menu) return;
 
   toggle.addEventListener("click", function () {
+    // classList.toggle returns true if class was added, false if removed
     var isOpen = menu.classList.toggle("open");
     toggle.classList.toggle("open", isOpen);
+    // Keep aria-expanded in sync so screen readers know if menu is open or closed
     toggle.setAttribute("aria-expanded", isOpen);
   });
 
@@ -95,7 +100,9 @@ if (isIndexPage) {
   }
 
   function addSkill(rawSkill) {
+    // Clean up any extra spaces the user may have typed
     var skill = rawSkill.trim();
+    // Nothing to add if string is empty after trimming
     if (!skill) return;
 
     // Block duplicate entries (case-insensitive)
@@ -107,10 +114,12 @@ if (isIndexPage) {
     selectedSkills.push(skill);
     renderSelectedChips();
     syncSkillsHiddenInput();
+    // Once a skill is added, remove the "please add a skill" error if it was showing
     clearFieldError("skills-error");
   }
 
   function removeSkill(skill) {
+    // Rebuild the array without the skill that was just removed
     selectedSkills = selectedSkills.filter(function (s) { return s !== skill; });
     renderSelectedChips();
     syncSkillsHiddenInput();
@@ -124,6 +133,7 @@ if (isIndexPage) {
   }
 
   function renderSelectedChips() {
+    // Wipe out old chips first so we don't end up with duplicates in the UI
     chipsSelectedEl.innerHTML = "";
     selectedSkills.forEach(function (skill) {
       var chipEl = document.createElement("span");
@@ -137,6 +147,7 @@ if (isIndexPage) {
       removeBtn.innerHTML = "&times;";
       removeBtn.setAttribute("aria-label", "Remove " + skill);
       removeBtn.addEventListener("click", function (e) {
+        // Stop click from bubbling up to the chip wrap's click listener
         e.stopPropagation();
         removeSkill(skill);
       });
@@ -148,6 +159,7 @@ if (isIndexPage) {
 
   function syncSkillsHiddenInput() {
     // Keep the hidden <input> in sync for form serialisation
+    // The API expects a comma-separated string, so join the array that way
     skillsHidden.value = selectedSkills.join(", ");
   }
 
@@ -175,6 +187,7 @@ if (isIndexPage) {
   function validateForm() {
     var valid = true;
 
+    // Check both the array and the hidden input since skills can come from either source
     if (selectedSkills.length === 0 && !skillsHidden.value.trim()) {
       showFieldError("skills-error", "Please add at least one skill.");
       valid = false;
@@ -209,6 +222,7 @@ if (isIndexPage) {
     setLoadingState(true);
 
     var payload = {
+      // Prefer the hidden input value; fall back to raw text box if hidden input is empty
       skills:   skillsHidden.value.trim() || skillsTextInput.value.trim(),
       level:    document.getElementById("level").value,
       interest: document.getElementById("interest").value,
@@ -241,6 +255,7 @@ if (isIndexPage) {
   });
 
   function setLoadingState(isLoading) {
+    // Disable the button so the user can't accidentally submit twice
     submitBtn.disabled = isLoading;
     btnLabel.style.display   = isLoading ? "none"   : "inline";
     btnLoading.style.display = isLoading ? "inline" : "none";
@@ -251,6 +266,7 @@ if (isIndexPage) {
       resultsLoadingEl.style.display  = "block";
       resultsGrid.style.display       = "none";
       resultsEmptyEl.style.display    = "none";
+      // Scroll down so the user can see the spinner without manually scrolling
       resultsSection.scrollIntoView({ behavior: "smooth" });
     } else {
       resultsLoadingEl.style.display  = "none";
@@ -266,6 +282,7 @@ if (isIndexPage) {
   function renderResults(projects, message) {
     resultsSection.style.display    = "block";
     resultsLoadingEl.style.display  = "none";
+    // Clear out any cards from a previous search before showing new ones
     resultsGrid.innerHTML           = "";
 
     if (!projects || projects.length === 0) {
@@ -298,6 +315,7 @@ if (isIndexPage) {
     // Description (truncated for visual consistency)
     var desc = document.createElement("p");
     desc.className   = "project-card-desc";
+    // Cut description to 120 chars so all cards stay the same height
     desc.textContent = truncate(project.description, 120);
 
     // Tags row
@@ -310,6 +328,7 @@ if (isIndexPage) {
     });
 
     // Level tag (colour-coded via CSS class)
+    // Lowercase so it matches the CSS class names like "level beginner", "level advanced"
     var levelClass = "level " + (project.level || "").toLowerCase();
     tagsRow.appendChild(createTag(project.level, levelClass));
 
@@ -337,13 +356,16 @@ if (isIndexPage) {
 
   function createTag(text, type) {
     var span = document.createElement("span");
+    // The type becomes a BEM modifier so CSS can style each tag differently
     span.className   = "project-tag project-tag--" + type;
     span.textContent = text;
     return span;
   }
 
   function truncate(text, maxLength) {
+    // Safety check — just return empty string if text is missing
     if (!text) return "";
+    // Only add "..." if the text is actually longer than the limit
     return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
   }
 
@@ -367,11 +389,14 @@ if (isDetailPage) {
   var codeFetched = false;
 
   function openCodePanel() {
+    // Panel element might not exist on every detail page, so check first
     if (!codePanel) return;
     codePanel.classList.add("active");
     if (codePanelOverlay) codePanelOverlay.classList.add("active");
+    // Lock background scroll so the page doesn't scroll behind the panel
     document.body.style.overflow = "hidden";
 
+    // Only fetch the code on the first open, no need to re-fetch every time
     if (!codeFetched) fetchStarterCode();
   }
 
@@ -379,10 +404,12 @@ if (isDetailPage) {
     if (!codePanel) return;
     codePanel.classList.remove("active");
     if (codePanelOverlay) codePanelOverlay.classList.remove("active");
+    // Restore normal scrolling once the panel is closed
     document.body.style.overflow = "";
   }
 
   function fetchStarterCode() {
+    // Show a loading message while we wait for the API response
     if (codeContentEl) codeContentEl.textContent = "Loading starter code...";
 
     fetch("/project/" + PROJECT_ID + "/code")
@@ -394,6 +421,7 @@ if (isDetailPage) {
         }
         if (codePanelFilename) codePanelFilename.textContent = data.filename;
         if (codeContentEl)     codeContentEl.textContent     = data.code;
+        // Mark as fetched so we don't hit the API again on the next open
         codeFetched = true;
       })
       .catch(function () {
@@ -412,6 +440,7 @@ if (isDetailPage) {
     codePanelOverlay.addEventListener("click", closeCodePanel);
   }
 
+  // Let keyboard users close the panel with Escape — important for accessibility
   document.addEventListener("keydown", function (evt) {
     if (evt.key === "Escape") closeCodePanel();
   });
@@ -435,6 +464,7 @@ if (isDetailPage) {
     if (checkIcon) checkIcon.style.display = "inline";
     if (btnLabel)  btnLabel.textContent    = "Copied!";
     btnCopyCode.classList.add("copied");
+    // Disable button so user can't spam click it while toast is showing
     btnCopyCode.disabled = true;
 
     // Show toast
@@ -443,6 +473,7 @@ if (isDetailPage) {
     }
 
     // Auto-reset after 2.5 s
+    // Clear any previous timeout first so timers don't stack up
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(function () {
       if (copyIcon)  copyIcon.style.display  = "inline";
@@ -457,6 +488,7 @@ if (isDetailPage) {
   if (btnCopyCode) {
     btnCopyCode.addEventListener("click", function () {
       var code = codeContentEl ? codeContentEl.textContent : "";
+      // Don't copy if the code hasn't loaded yet — just ignore the click
       if (!code || code === "Loading..." || code === "Loading starter code...") return;
 
       // Use Clipboard API with textarea fallback
@@ -471,12 +503,15 @@ if (isDetailPage) {
   }
 
   function fallbackCopy(text) {
+    // Some older browsers don't support navigator.clipboard, so we use a hidden textarea instead
     var ta = document.createElement("textarea");
     ta.value = text;
+    // Push it off-screen so it's not visible but can still be selected
     ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
     document.body.appendChild(ta);
     ta.focus();
     ta.select();
+    // execCommand is old and deprecated but works as a last resort — fail silently if it doesn't
     try { document.execCommand("copy"); showCopySuccess(); } catch (e) { /* silent fail */ }
     document.body.removeChild(ta);
   }
