@@ -50,7 +50,7 @@ def parse_skills(skills_string):
 
     return normalized_skills
 
-
+# -------------
 def score_single_project(
         project, user_skills,
         level, interest, time_availability):
@@ -58,23 +58,32 @@ def score_single_project(
     Calculate a numeric relevance score for one project.
 
     Each matching criterion adds points:
-      - Each matching skill:  +3
+      - Skill coverage score: matched * WEIGHT_SKILL * coverage_ratio
       - Level match:          +2
       - Interest match:       +2
       - Time match:           +1
 
-    Returns an integer score (0 means no match at all).
+    coverage_ratio = matched_skills / total_project_skills
+    This means a user covering 1 of 2 required skills scores less
+    than a user covering both, even with the same raw match count.
+
+    Returns a float score (0 means no match at all).
     """
     score = 0
 
     # Compare user's skills against the project's required skills
     project_skills = [s.lower() for s in project.get("skills", [])]
-    # Count how many user skills overlap with the
-    # skills required by the current project.
     matched_skills = sum(1 for skill in user_skills if skill in project_skills)
-    # Add weighted points based on the number of matching skills.
-    # More overlapping skills result in a higher recommendation score.
-    score += matched_skills * WEIGHT_SKILL
+
+    # Coverage ratio: fraction of the project's skills the user covers
+    # Avoids division-by-zero if a project has no skills listed
+    if project_skills:
+        coverage = matched_skills / len(project_skills)
+    else:
+        coverage = 0
+
+    # Weighted skill score — partial matches score proportionally lower
+    score += round(matched_skills * WEIGHT_SKILL * coverage, 2)
 
     # Award points for each additional matching criterion
     if project.get("level", "").lower() == level.lower():
@@ -88,7 +97,7 @@ def score_single_project(
 
     return score
 
-
+# -----------
 def get_recommendations(skills_string, level, interest, time_availability):
     """
     Return the top N recommended projects for the given user inputs.
