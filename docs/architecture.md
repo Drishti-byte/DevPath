@@ -201,7 +201,6 @@ No client-side template engine is used. The frontend JavaScript only handles
 interactivity (form submission, chip management, code panel) and rendering of
 the recommendation cards (which come back from the API as JSON).
 
-
 ---
 
 ## Static Files
