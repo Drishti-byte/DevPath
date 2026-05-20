@@ -2,7 +2,7 @@
 hotel_management.py
 ===================
 Project:    Sunrise Grand Hotel Management System
-Type:       CLI (Command Line Interface)  <-- ADD THIS LINE
+Type:       CLI (Command Line Interface)
 Difficulty: Medium
 Skills:     Python, Dictionaries, Functions, Error Handling, Input Validation
 Time:       Medium (a weekend)
@@ -37,7 +37,7 @@ Roadmap:
 def initialize_rooms():
     """
     Initializes a 40-room inventory across four distinct luxury categories.
-    Deluxe: 101-110 | Super Deluxe: 201-210 | Suite: 301-310 | Presidential: 401-410
+    Deluxe: 101-110 (Rs. 2500)| Super Deluxe: 201-210 (Rs. 3500)| Suite: 301-310 (Rs. 5000)| Presidential: 401-410 (Rs. 8000)
     """
     rooms = {}
     
@@ -71,7 +71,7 @@ def show_available_rooms():
     found = False
     for room_no, details in rooms.items():
         if details[2] == "Available":
-            print(f"Room No: {room_no} | Type: {details[0]} | Price/Day: ₹{details[1]}")
+            print(f"Room No: {room_no} | Type: {details[0]} | Price/Day: Rs. {details[1]}")
             found = True
     if not found:
         print(">> No rooms currently available.")
@@ -99,7 +99,7 @@ def book_room():
         print(">> Room is already occupied. Please select another.")
         return
     
-    print(f"\nBooking Room {room_no} ({rooms[room_no][0]} @ ₹{rooms[room_no][1]}/day)")
+    print(f"\nBooking Room {room_no} ({rooms[room_no][0]} @ Rs. {rooms[room_no][1]}/day)")
     name = input("Enter Guest Name: ").strip()
     contact = input("Enter Contact Number: ").strip()
     
@@ -113,7 +113,7 @@ def book_room():
         if days <= 0:
             print(">> Error: Duration must be at least 1 day.")
             return
-        # Enforce a 30-day policy to prevent long-term squatting without review
+        # Enforcing a 30-day policy to prevent long-term squatting without review
         elif days > 30:
             while days > 30:
                 print(">> Error: Policy Limit! Maximum initial stay is 30 days.")
@@ -136,7 +136,7 @@ def book_room():
     }
 
     print("\n✅ Room booked successfully!")
-    print(f"Total Amount to Pay: ₹{total_price}") 
+    print(f"Total Amount to Pay: Rs. {total_price}") 
 
 def cancel_booking():
     """Resets a booked room back to 'Available' status and clears guest data."""
@@ -168,7 +168,7 @@ def search_by_type():
             status = details[2]
             # Ternary-style logic for guest display
             guest = f"({details[3]['Guest Name']})" if status == "Booked" else ""
-            print(f"Room No: {room_no} | Status: {status} {guest} | Price/Day: ₹{details[1]}")
+            print(f"Room No: {room_no} | Status: {status} {guest} | Price/Day: Rs. {details[1]}")
             found = True
 
     if not found:
@@ -187,7 +187,7 @@ def view_guest_details():
         print(f"Name: {guest['Guest Name']}")
         print(f"Contact: {guest['Contact']}")
         print(f"Stay Duration: {guest['Days']} days")
-        print(f"Total Billing: ₹{guest['Total Price']} (₹{rooms[room_no][1]} x {guest['Days']})")
+        print(f"Total Billing: Rs. {guest['Total Price']} (Rs .{rooms[room_no][1]} x {guest['Days']})")
     else:
         print(">> No active booking found for this room.")
 
