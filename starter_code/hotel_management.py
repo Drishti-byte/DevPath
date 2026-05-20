@@ -2,6 +2,7 @@
 hotel_management.py
 ===================
 Project:    Sunrise Grand Hotel Management System
+Type:       CLI (Command Line Interface)  <-- ADD THIS LINE
 Difficulty: Medium
 Skills:     Python, Dictionaries, Functions, Error Handling, Input Validation
 Time:       Medium (a weekend)
