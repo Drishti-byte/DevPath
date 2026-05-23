@@ -523,11 +523,7 @@ if (clearFiltersBtn) {
             return;
           }
 
-          // renderResults(data.projects || [], data.message);
-          console.log(Array.isArray(data.projects));
-          console.log(typeof data.projects);
-          console.log(data.projects);
-
+          renderResults(data.projects || [], data.message);
           renderResults(Array.isArray(data.projects) ? data.projects : [], data.message);
         })
         .catch(function (err) {
