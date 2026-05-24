@@ -154,6 +154,45 @@ pip install -r requirements.txt
 python app.py
 ```
 
+---
+
+## Troubleshooting
+
+### Common Setup Issues
+
+#### Virtual environment activation not working on Windows
+
+Use:
+
+```bash
+venv\Scripts\activate
+```
+
+instead of:
+
+```bash
+source venv/bin/activate
+```
+
+#### ModuleNotFoundError
+
+Make sure all dependencies are installed:
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Flask app not starting
+
+Verify that you are running:
+
+```bash
+python app.py
+```
+
+from the project root directory.
+---
+
 **http://127.0.0.1:5000** — that is the entire setup.
 
 ```bash
