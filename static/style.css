@@ -1000,9 +1000,8 @@ html[data-entry-anim="true"] .form-card form > .btn-submit { animation-delay: 39
 .skill-strip-items {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0;
-  white-space: nowrap;
 }
 
 .ss-item-indigo {
