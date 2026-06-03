@@ -683,62 +683,69 @@ if (isIndexPage) {
   // ----------------------------------------------------------
 
   form.addEventListener("submit", function (evt) {
-    evt.preventDefault(); //stop the browser from reloading the page on form submit
-    clearAllErrors()
+  evt.preventDefault();
 
-    if (skillsTextInput.value.trim()) {
-      addSkill(skillsTextInput.value);
-      skillsTextInput.value = "";
-      hideSuggestions();
-    }
+  clearAllErrors();
 
-    if (!validateForm()) return; //stop - anything missing/invalid
+  if (skillsTextInput.value.trim()) {
+    addSkill(skillsTextInput.value);
+    skillsTextInput.value = "";
+    hideSuggestions();
+  }
 
-    setLoadingState(true);
+  if (!validateForm()) return;
 
-    // Allow browser to paint spinner before request starts
-    requestAnimationFrame(function () {
+  setLoadingState(true);
 
-      var payload = {
-        skills: skillsHidden.value.trim() || skillsTextInput.value.trim(),
-        level: document.getElementById("level").value,
-        interest: document.getElementById("interest").value,
-        time: document.getElementById("time").value
-      };
+  requestAnimationFrame(function () {
 
-      fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+    var payload = {
+      skills: skillsHidden.value.trim() || skillsTextInput.value.trim(),
+      level: document.getElementById("level").value,
+      interest: document.getElementById("interest").value,
+      time: document.getElementById("time").value
+    };
+
+    fetch("/api/recommend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) {
+        return res.json();
       })
-        .then(function (res) {
-          return res.json();
-        })
-        .then(function (data) {
+      .then(function (data) {
 
-          setLoadingState(false);
+        setLoadingState(false);
 
-          if (data.error) {
-            var generalErr = document.getElementById("form-error-general");
-
-            if (generalErr) {
-              generalErr.textContent = data.error;
-            }
-
-            return;
-          }
-
-          renderResults(data.projects || [], data.message);
-        })
-        .catch(function () {
-          setLoadingState(false);
+        if (data.error) {
           var generalErr = document.getElementById("form-error-general");
           if (generalErr) {
-            generalErr.textContent = "An error occurred. Please try again.";
+            generalErr.textContent = data.error;
           }
-        });
-    });
+
+          return;
+        }
+
+        renderResults(data.projects || [], data.message);
+      })
+      .catch(function (err) {
+
+        setLoadingState(false);
+
+        var generalErr = document.getElementById("form-error-general");
+
+        if (generalErr) {
+          generalErr.textContent =
+            "Something went wrong. Please try again.";
+        }
+
+        console.error("API request failed:", err);
+      });
   });
+});
 
   // Manages the loading state of the form and results section(whats visible or not)
   function setLoadingState(isLoading) {
@@ -775,22 +782,18 @@ if (isIndexPage) {
     // Clear out any cards from a previous search before showing new ones
     resultsGrid.innerHTML = "";
 
-    if (!projects || projects.length === 0) { //if no projects returned from api, show the "no results" message and hide the grid
-        resultsGrid.style.display = "none";
-        resultsEmptyEl.style.display = "block";
+    if (!projects || projects.length === 0) {
+      resultsGrid.style.display = "none";
+      resultsEmptyEl.style.display = "block";
 
-        // Show a friendly custom message when the user selected an interest
-        var selectedInterest = document.getElementById("interest")?.value;
-        if (selectedInterest) {
-          emptyMessageEl.textContent = "No projects are currently available for this interest. Please check back later or try a different area.";
-        } else if (message) {
-          emptyMessageEl.textContent = message;
-        } else {
-          emptyMessageEl.textContent = "Try adjusting your skills or choosing a different interest area.";
-        }
-
-        resultsSection.scrollIntoView({ behavior: "smooth" });
-        return;
+      // Show a friendly custom message when the user selected an interest
+      var selectedInterest = document.getElementById("interest")?.value;
+      if (selectedInterest) {
+        emptyMessageEl.textContent = "No projects are currently available for this interest. Please check back later or try a different area.";
+      } else if (message) {
+        emptyMessageEl.textContent = message;
+      } else {
+        emptyMessageEl.textContent = "Try adjusting your skills or choosing a different interest area.";
       }
 
       resultsEmptyEl.style.display = "none";
@@ -1423,4 +1426,4 @@ function scrollToTop() {
 if (scrollTopBtn) {
     window.addEventListener('scroll', handleScroll);
     scrollTopBtn.addEventListener('click', scrollToTop);
-  }
+}
