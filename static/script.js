@@ -816,18 +816,20 @@ if (isIndexPage) {
         emptyMessageEl.textContent = "Try adjusting your skills or choosing a different interest area.";
       }
 
-      resultsSection.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
+  // Clear out previous results before rendering new ones
+  resultsGrid.innerHTML = "";
 
-    resultsEmptyEl.style.display = "none";
-    resultsGrid.style.display = "grid";
+  // If no projects are returned, show the empty state message
+  if (!projects || projects.length === 0) {
+    resultsGrid.style.display = "none";
+    resultsEmptyEl.style.display = "block";
 
     projects.forEach(function (project) {
       resultsGrid.appendChild(buildProjectCard(project));
     });
 
     resultsSection.scrollIntoView({ behavior: "smooth" });
+    return;
   }
 
   function buildProjectCard(project) {
