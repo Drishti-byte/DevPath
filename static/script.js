@@ -816,16 +816,33 @@ updateProfileWidgets();
   var errorMsg = document.getElementById("github-modal-error");
 
   function closeGithubModal() {
-    modal.classList.remove("active");
-    githubInput.value = "";
-    errorMsg.textContent = "";
-  }
+  modal.classList.remove("active");
+  githubInput.value = "";
+  errorMsg.textContent = "";
+  openModalBtn.focus(); // add this line
+}
 
   if (modal && openModalBtn && closeModalBtn && fetchBtn && githubInput && errorMsg) {
     openModalBtn.addEventListener("click", function () {
       modal.classList.add("active");
       githubInput.focus();
     });
+    modal.addEventListener("keydown", function (event) {
+  if (!modal.classList.contains("active")) return;
+  var focusable = modal.querySelectorAll("button, input");
+  var first = focusable[0];
+  var last = focusable[focusable.length - 1];
+  if (event.key === "Tab") {
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+  if (event.key === "Escape") closeGithubModal();
+});
     closeModalBtn.addEventListener("click", closeGithubModal);
     modal.addEventListener("click", function (event) {
       if (event.target === modal) closeGithubModal();
