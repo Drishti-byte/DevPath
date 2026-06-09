@@ -580,9 +580,9 @@ updateProfileWidgets();
     evt.preventDefault(); //stop the browser from reloading the page on form submit
     clearAllErrors();
 
-    if (skillsTextInput.value.trim()) {
-      addSkill(skillsTextInput.value);
-      skillsTextInput.value = "";
+    if (skillsInput.value.trim()) {
+      addSkill(skillsInput.value);
+      skillsInput.value = "";
       hideSuggestions();
     }
 
@@ -707,32 +707,6 @@ updateProfileWidgets();
     span.className = "project-tag project-tag--" + normalize(type).replace(/[^a-z0-9_-]/g, "-");
     span.textContent = text;
     return span;
-
-  //takes the array of projects from the api and draws them on the page as cards
-  //if array is empty it shows the "no results" message instead
-  function renderResults(projects, message) {
-    resultsSection.style.display = "block";
-    resultsLoadingEl.style.display = "none";
-    // Clear out any cards from a previous search before showing new ones
-    resultsGrid.innerHTML = "";
-
-    if (!projects || projects.length === 0) {
-      resultsGrid.style.display     = "none";
-      resultsEmptyEl.style.display  = "block";
-      if (message && emptyMessageEl) emptyMessageEl.textContent = message;
-      resultsSection.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-
-    resultsEmptyEl.style.display = "none";
-    resultsGrid.style.display = "grid";
-
-    projects.forEach(function (project) {
-      resultsGrid.appendChild(buildProjectCard(project));
-    });
-
-    resultsSection.scrollIntoView({ behavior: "smooth" });
- main
   }
 
   function buildProjectCard(project) {
@@ -1246,4 +1220,37 @@ updateProfileWidgets();
     window.scrollTo({ top: atBottom ? 0 : document.body.scrollHeight, behavior: "smooth" });
   });
   update();
+})();
+
+(function initScrollSpy() {
+  var sections = document.querySelectorAll("section[id], header[id]");
+  var navLinks = document.querySelectorAll(".nav-link, .nav-mobile-link");
+
+  if (sections.length === 0 || navLinks.length === 0) return;
+
+  var observerOptions = {
+    root: null,
+    rootMargin: "-20% 0px -70% 0px",
+    threshold: 0
+  };
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        var id = entry.target.getAttribute("id");
+        navLinks.forEach(function (link) {
+          var href = link.getAttribute("href");
+          if (href === "#" + id) {
+            link.classList.add("active");
+          } else if (href && href.startsWith("#")) {
+            link.classList.remove("active");
+          }
+        });
+      }
+    });
+  }, observerOptions);
+
+  sections.forEach(function (sec) {
+    observer.observe(sec);
+  });
 })();
