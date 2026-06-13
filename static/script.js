@@ -566,6 +566,22 @@ updateProfileWidgets();
 
     var footer = document.createElement("div");
     footer.className = "project-card-footer";
+
+    if (typeof DevPathBookmarks !== "undefined") {
+      var saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "btn-save-project";
+      saveBtn.setAttribute("data-save-project-id", project.id);
+      var isSaved = DevPathBookmarks.isSaved(project.id);
+      if (isSaved) saveBtn.classList.add("saved");
+      saveBtn.setAttribute("aria-pressed", isSaved ? "true" : "false");
+      DevPathBookmarks.setButtonContent(saveBtn, isSaved);
+      saveBtn.addEventListener("click", function () {
+        DevPathBookmarks.toggle(project, saveBtn);
+      });
+      footer.appendChild(saveBtn);
+    }
+
     var link = document.createElement("a");
     link.className = "btn-details";
     link.textContent = "View Full Project";
