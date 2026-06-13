@@ -272,6 +272,9 @@ function recordCompletion(projectId, projectTitle) {
 loadProgressState();
 updateProfileWidgets();
 
+// ============================================================
+// INDEX PAGE
+// ============================================================
 (function initIndexPage() {
   var form = document.getElementById("recommend-form");
   if (!form) return;
@@ -453,74 +456,10 @@ updateProfileWidgets();
     return valid;
   }
 
-
   // ----------------------------------------------------------
-  // Form submission and API call
+  // Loading state
   // ----------------------------------------------------------
 
-  form.addEventListener("submit", function (evt) {
-    evt.preventDefault(); //stop the browser from reloading the page on form submit
-    clearAllErrors()
-    
-    if (skillsTextInput.value.trim()) {
-      addSkill(skillsTextInput.value);
-      skillsTextInput.value = "";
-      hideSuggestions();
-    }
-
-    if (!validateForm()) return; //stop - anything missing/invalid
-
-    setLoadingState(true);
-
-    // Allow browser to paint spinner before request starts
-    requestAnimationFrame(function () {
-
-      //combine form values into an object to send to server/api
-      var payload = {
-        // Prefer the hidden input value; fall back to raw text box if hidden input is empty
-        skills: skillsHidden.value.trim() || skillsTextInput.value.trim(),
-        level: document.getElementById("level").value,
-        interest: document.getElementById("interest").value,
-        time: document.getElementById("time").value
-      };
-
-      //post the data to backend api as JSON, then handle the response
-      fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-        .then(function (res) {
-          return res.json();
-        })
-        .then(function (data) {
-
-  clearAllErrors();
-
-  if (skillsTextInput.value.trim()) {
-    addSkill(skillsTextInput.value);
-    skillsTextInput.value = "";
-    hideSuggestions();
-  }
-
-  if (!validateForm()) return;
-
-  setLoadingState(true);
-
-          renderResults(data.projects || [], data.message);
-        })
-        .catch(function (err) {
-          // this runs if the network request itself fails 
-          setLoadingState(false);
-          var generalErr = document.getElementById("form-error-general");
-          if (generalErr) generalErr.textContent = "Something went wrong. Please try again.";
-          console.error("API request failed:", err);
-        });
-    });
-  });
-});
-
-  // Manages the loading state of the form and results section(whats visible or not)
   function setLoadingState(isLoading) {
     submitBtn.disabled = isLoading;
     submitBtn.setAttribute("aria-busy", isLoading ? "true" : "false");
@@ -537,13 +476,23 @@ updateProfileWidgets();
     }
   }
 
-
   // ----------------------------------------------------------
   // Render result cards
   // ----------------------------------------------------------
 
+  function truncate(text, maxLength) {
+    if (!text) return "";
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  }
+
+  function createTag(text, type) {
+    var span = document.createElement("span");
+    span.className = "project-tag project-tag--" + type;
+    span.textContent = text;
+    return span;
+  }
+
   // Renders project result cards or shows the empty-state message.
-  // Uses a single consolidated check to toggle between states.
   function renderResults(projects, message) {
     resultsSection.style.display = "block";
     resultsLoadingEl.style.display = "none";
@@ -569,7 +518,6 @@ updateProfileWidgets();
     });
 
     resultsSection.scrollIntoView({ behavior: "smooth" });
- main
   }
 
   function buildProjectCard(project) {
@@ -624,23 +572,6 @@ updateProfileWidgets();
     return card;
   }
 
-  function renderResults(projects, message) {
-    resultsSection.style.display = "block";
-    resultsLoadingEl.style.display = "none";
-    resultsGrid.textContent = "";
-    if (!projects || projects.length === 0) {
-      resultsGrid.style.display = "none";
-      resultsEmptyEl.style.display = "block";
-      emptyMessageEl.textContent = message || "Try adjusting your skills or choosing a different interest area.";
-      resultsSection.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-    resultsEmptyEl.style.display = "none";
-    resultsGrid.style.display = "grid";
-    projects.forEach(function (project) { resultsGrid.appendChild(buildProjectCard(project)); });
-    resultsSection.scrollIntoView({ behavior: "smooth" });
-  }
-
 
   // ----------------------------------------------------------
   // Share My Result — build URL and copy to clipboard
@@ -656,13 +587,13 @@ updateProfileWidgets();
     var params = new URLSearchParams();
     var allSkills = skillsHidden.value.trim();
     var skillsArr = [];
-    var truncated = false;
+    var truncatedFlag = false;
 
     if (allSkills) {
       skillsArr = allSkills.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
       if (skillsArr.length > MAX_SHARE_SKILLS) {
         skillsArr = skillsArr.slice(0, MAX_SHARE_SKILLS);
-        truncated = true;
+        truncatedFlag = true;
       }
       params.set("skills", skillsArr.join(", "));
     }
@@ -676,12 +607,12 @@ updateProfileWidgets();
     // Progressively trim skills if URL still exceeds safe browser limit
     while (url.length > MAX_URL_LENGTH && skillsArr.length > 1) {
       skillsArr.pop();
-      truncated = true;
+      truncatedFlag = true;
       params.set("skills", skillsArr.join(", "));
       url = baseUrl + "?" + params.toString();
     }
 
-    return { url: url, truncated: truncated };
+    return { url: url, truncated: truncatedFlag };
   }
 
   var shareBtn = document.getElementById("share-result-btn");
@@ -690,7 +621,6 @@ updateProfileWidgets();
   var _shareWasTruncated = false;
 
   // Show the "Copied!" state on the share button and display the toast.
-  // If skills were truncated, the label indicates the truncation.
   function showShareSuccess() {
     if (!shareBtn) return;
     var originalLabel = shareBtn.querySelector(".share-btn-label");
@@ -796,7 +726,7 @@ updateProfileWidgets();
     // Sanitize and add each skill from the comma-separated query param
     qSkills.split(",").forEach(function (s) {
       var safe = sanitizeSkillValue(s);
-      if (safe) addSkill(safe);
+      if (safe) window.addSkill(safe);
     });
 
     // Set dropdown values to the validated selections
@@ -820,13 +750,10 @@ updateProfileWidgets();
     }
   })();
 
-} // end isIndexPage
 
-
-  // ============================================================
-  // DETAIL PAGE
-  // ============================================================
-  if (isDetailPage) {
+  // ----------------------------------------------------------
+  // Skill input event listeners
+  // ----------------------------------------------------------
 
   skillsInput.addEventListener("input", function () {
     showSuggestions(filteredSkills(skillsInput.value));
@@ -917,6 +844,10 @@ updateProfileWidgets();
     });
   }
 
+  // ----------------------------------------------------------
+  // Form submission and API call
+  // ----------------------------------------------------------
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     clearAllErrors();
@@ -954,6 +885,10 @@ updateProfileWidgets();
         if (general) general.textContent = err.message || "An unexpected error occurred. Please try again.";
       });
   });
+
+  // ----------------------------------------------------------
+  // GitHub modal
+  // ----------------------------------------------------------
 
   var modal = document.getElementById("github-modal-overlay");
   var openModalBtn = document.getElementById("btn-show-github");
@@ -1014,6 +949,10 @@ updateProfileWidgets();
   }
 })();
 
+
+// ============================================================
+// DETAIL PAGE
+// ============================================================
 (function initDetailPage() {
   if (typeof PROJECT_ID === "undefined") return;
   recordProjectView();
@@ -1162,6 +1101,10 @@ updateProfileWidgets();
   }
 })();
 
+
+// ============================================================
+// Scroll-to-top / scroll-to-bottom button
+// ============================================================
 (function initScrollButton() {
   var button = document.getElementById("scroll-top-btn");
   var icon = document.getElementById("scroll-btn-icon");
