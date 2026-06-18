@@ -279,13 +279,16 @@ def test_score_single_project_partial_skill_coverage():
     )
 
 
-def test_score_coverage_ratio_exact_values():
+def test_score_coverage_ratio_exact_values(monkeypatch):
     """Verify the coverage-weighted formula produces the correct numeric result."""
+    import utils.recommender
+    monkeypatch.setattr(utils.recommender, "_load_skill_graph", lambda: {})
+
     project = {"skills": ["Python", "Flask"], "level": "Beginner", "interest": "Data", "time": "Low"}
 
     # 1 of 2 skills matched: coverage = 0.5, score = 1 * 3 * 0.5 = 1.5
     score = score_single_project(project, ["python"], "Advanced", "Games", "High")
-    assert score == pytest.approx(3), f"Expected 1.5 but got {score}"
+    assert score == pytest.approx(1.5), f"Expected 1.5 but got {score}"
 
     # 2 of 2 skills matched: coverage = 1.0, score = 2 * 3 * 1.0 = 6.0
     score = score_single_project(project, ["python", "flask"], "Advanced", "Games", "High")
@@ -898,5 +901,6 @@ def test_ml_similarity_score_returns_float():
 
 def test_ml_recommendation_prefers_relevant_python_data_project():
     results = get_recommendations("Python, pandas", "Intermediate", "Data", "High")
-    titles = [project["title"] for project in results]
+    recs = results.get("recommendations", [])
+    titles = [project["title"] for project in recs]
     assert any("Data" in title or "Pipeline" in title for title in titles)

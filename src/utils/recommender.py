@@ -11,6 +11,12 @@ import os
 from utils.data_loader import load_all_projects
 
 MAX_RESULTS = 3
+MAX_RELATED = 3
+_CLUSTERS_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "data",
+    "clusters.json",
+)
 
 VALID_LEVELS = {"beginner", "intermediate", "advanced"}
 VALID_INTERESTS = {"web", "data", "education", "automation", "games", "cybersecurity", "devops", "backend", "tools", "productivity", "business logic", "mobile", "machine learning/ai"}
@@ -185,7 +191,7 @@ def score_single_project(project, user_skills, level, interest, time_availabilit
 def _load_skill_graph():
     """Load skill_graph.json from data/. Returns empty dict on failure."""
     path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "data", "skill_graph.json"
     )
     if not os.path.exists(path):
@@ -356,7 +362,21 @@ def get_recommendations(skills_string, level, interest, time_availability):
     # Sort projects in descending order so the
     # most relevant recommendations appear first.
     scored_projects.sort(key=lambda item: (item["score"], item["project"].get("id", 0)), reverse=True)
-    return [item["project"] for item in scored_projects[:MAX_RESULTS]]
+    
+    top_projects = [item["project"] for item in scored_projects[:MAX_RESULTS]]
+    top_ids = [p["id"] for p in top_projects]
+    
+    cluster_data = _load_clusters()
+    related = _get_related(top_ids, all_projects, cluster_data) if cluster_data else []
+    
+    graph = _load_skill_graph()
+    progression = get_progression(user_skills, top_ids, all_projects, graph) if graph else []
+    
+    return {
+        "recommendations": top_projects,
+        "related": related,
+        "progression": progression,
+    }
 
 VALID_LEVELS = ["beginner", "intermediate", "advanced"]
 VALID_TIME_AVAILABILITY = ["low", "medium", "high"]
